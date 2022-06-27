@@ -19,8 +19,7 @@ int Process::Pid() { return _pid; }
 // DONE: Return this process's CPU utilization
 float Process::CpuUtilization() const {
   long ttime = LinuxParser::ActiveJiffies(_pid);
-  long up_time = LinuxParser::UpTime() - Process::UpTime();
-  return (float)ttime / up_time;
+  return (float)ttime / this->UpTime();
 }
 
 // TODO: Return the command that generated this process
@@ -33,7 +32,9 @@ string Process::Ram() { return LinuxParser::Ram(_pid); }
 string Process::User() { return LinuxParser::User(_pid); }
 
 // TODO: Return the age of this process (in seconds)
-long int Process::UpTime() const { return LinuxParser::UpTime(_pid); }
+long int Process::UpTime() const {
+  return LinuxParser::UpTime() - LinuxParser::UpTime(_pid);
+}
 
 // TODO: Overload the "less than" comparison operator for Process objects
 // REMOVE: [[maybe_unused]] once you define the function

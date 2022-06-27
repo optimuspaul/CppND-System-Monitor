@@ -177,9 +177,6 @@ long LinuxParser::IdleJiffies() {
   return 0;
 }
 
-// TODO: Read and return CPU utilization
-vector<string> LinuxParser::CpuUtilization() { return {}; }
-
 // DONE: Read and return the total number of processes
 int LinuxParser::TotalProcesses() {
   std::ifstream stream(kProcDirectory + kStatFilename);
@@ -223,6 +220,9 @@ string LinuxParser::Command(int pid) {
   string label, line;
   if (stream.is_open()) {
     std::getline(stream, line);
+    if (line.length() > 40) {
+      line = line.substr(0, 37) + "...";
+    }
     return line;
   }
   return "";
@@ -237,9 +237,10 @@ string LinuxParser::Ram(int pid) {
     while (std::getline(stream, line)) {
       std::istringstream iss(line);
       iss >> label;
-      if ("VmSize:" == label) {
+      // using VmRSS instead of VmSize because it represents physical ram usage.
+      if ("VmRSS:" == label) {
         iss >> value;
-        return std::to_string(std::stoi(value) / 1000);
+        return std::to_string(std::stoi(value) / 1024);
       }
     }
   }
@@ -275,12 +276,17 @@ string LinuxParser::User(int pid) {
       std::istringstream iss(line);
       std::getline(iss, name, ':');
       std::getline(iss, uid, ':');
+      std::getline(iss, uid, ':');
+
       if (uid == puid) {
+        if (name.length() > 6) {
+          name = name.substr(0, 6);
+        }
         return name;
       }
     }
   }
-  return "";
+  return puid;
 }
 
 // DONE: Read and return the uptime of a process
@@ -293,7 +299,7 @@ long LinuxParser::UpTime(int pid) {
   if (stream.is_open()) {
     std::getline(stream, line);
     std::istringstream iss(line);
-    /* Skip first 22 items in line */
+    /* Skip first 21 items in line */
     while (--counter) {
       iss >> ignore;
     }
